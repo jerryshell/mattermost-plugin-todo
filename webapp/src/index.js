@@ -32,9 +32,9 @@ export default class Plugin {
         registry.registerChannelHeaderButtonAction(<ChannelHeaderButton/>, () => store.dispatch(toggleRHSPlugin), 'Todo', 'Open your list of Todo issues.');
 
         const refresh = () => {
-            store.dispatch(list(false, 'my'));
-            store.dispatch(list(false, 'in'));
-            store.dispatch(list(false, 'out'));
+            store.dispatch(list(true, 'my'));
+            store.dispatch(list(true, 'in'));
+            store.dispatch(list(true, 'out'));
         };
 
         registry.registerWebSocketEventHandler(`custom_${pluginId}_refresh`, refresh);
