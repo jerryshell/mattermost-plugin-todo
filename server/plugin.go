@@ -22,6 +22,7 @@ const (
 type ListManager interface {
 	// AddIssue adds a todo to userID's myList with the message
 	AddIssue(userID, message, postID string) (*Issue, error)
+	AddIssueWithRemindAt(userID string, message string, postID string, remindAt int64) (*Issue, error)
 	// SendIssue sends the todo with the message from senderID to receiverID and returns the receiver's issueID
 	SendIssue(senderID, receiverID, message, postID string) (string, error)
 	// GetIssueList gets the todos on listID for userID
@@ -98,9 +99,10 @@ func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Req
 }
 
 type addAPIRequest struct {
-	Message string `json:"message"`
-	SendTo  string `json:"send_to"`
-	PostID  string `json:"post_id"`
+	Message  string `json:"message"`
+	SendTo   string `json:"send_to"`
+	PostID   string `json:"post_id"`
+	RemindAt int64  `json:"remind_at"`
 }
 
 func (p *Plugin) handleAdd(w http.ResponseWriter, r *http.Request) {
@@ -113,6 +115,7 @@ func (p *Plugin) handleAdd(w http.ResponseWriter, r *http.Request) {
 	var addRequest *addAPIRequest
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&addRequest)
+	p.API.LogInfo(fmt.Sprintf("addAPIRequest %#v\n", addRequest))
 	if err != nil {
 		p.API.LogError("Unable to decode JSON err=" + err.Error())
 		p.handleErrorWithCode(w, http.StatusBadRequest, "Unable to decode JSON", err)
@@ -122,7 +125,7 @@ func (p *Plugin) handleAdd(w http.ResponseWriter, r *http.Request) {
 	senderName := p.listManager.GetUserName(userID)
 
 	if addRequest.SendTo == "" {
-		_, err = p.listManager.AddIssue(userID, addRequest.Message, addRequest.PostID)
+		_, err = p.listManager.AddIssueWithRemindAt(userID, addRequest.Message, addRequest.PostID, addRequest.RemindAt)
 		if err != nil {
 			p.API.LogError("Unable to add issue err=" + err.Error())
 			p.handleErrorWithCode(w, http.StatusInternalServerError, "Unable to add issue", err)
@@ -141,7 +144,7 @@ func (p *Plugin) handleAdd(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if receiver.Id == userID {
-		_, err = p.listManager.AddIssue(userID, addRequest.Message, addRequest.PostID)
+		_, err = p.listManager.AddIssueWithRemindAt(userID, addRequest.Message, addRequest.PostID, addRequest.RemindAt)
 		if err != nil {
 			p.API.LogError("Unable to add issue err=" + err.Error())
 			p.handleErrorWithCode(w, http.StatusInternalServerError, "Unable to add issue", err)
@@ -222,6 +225,32 @@ func (p *Plugin) handleList(w http.ResponseWriter, r *http.Request) {
 			err = p.saveLastReminderTimeForUser(userID)
 			if err != nil {
 				p.API.LogError("Unable to save last reminder for user err=" + err.Error())
+			}
+		}
+	}
+
+	if r.URL.Query().Get("reminder") == "true" {
+		for _, issue := range issues {
+			remindAt := issue.Issue.RemindAt
+			if remindAt <= 0 {
+				continue
+			}
+
+			var timezone *time.Location
+			offset, _ := strconv.Atoi(r.Header.Get("X-Timezone-Offset"))
+			timezone = time.FixedZone("local", -60*offset)
+
+			now := model.GetMillis()
+			nt := time.Unix(now/1000, 0).In(timezone)
+			rt := time.Unix(remindAt/1000, 0).In(timezone)
+
+			// Debug
+			debugStr := "`" + fmt.Sprintf("issue %#v", issue) + "`"
+			debugStr = debugStr + "\n\n" + "`" + fmt.Sprintf("nt %#v rt %#v", nt, rt) + "`"
+			debugStr = debugStr + "\n\n" + "`" + fmt.Sprintf("rt.Sub(nt).Minutes() %#v", rt.Sub(nt).Minutes()) + "`"
+
+			if rt.Sub(nt).Minutes() <= 15 {
+				p.PostBotDM(userID, "Reminder:\n\n"+issueToString(issue)+"\n\nDebug:\n"+debugStr)
 			}
 		}
 	}

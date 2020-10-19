@@ -7,6 +7,7 @@ const manifest = JSON.parse(`
     "description": "This plugin makes it easy to keep track of Todo issues and get daily reminders.",
     "homepage_url": "https://github.com/mattermost/mattermost-plugin-todo",
     "support_url": "https://github.com/mattermost/mattermost-plugin-todo/issues",
+    "release_notes_url": "https://github.com/mattermost/mattermost-plugin-todo/releases/tag/v0.3.0",
     "version": "0.3.0",
     "min_server_version": "5.12.0",
     "server": {

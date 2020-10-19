@@ -75,6 +75,23 @@ func (l *listManager) AddIssue(userID, message, postID string) (*Issue, error) {
 	return issue, nil
 }
 
+func (l *listManager) AddIssueWithRemindAt(userID string, message string, postID string, remindAt int64) (*Issue, error) {
+	issue := newIssueWidthRemindAt(message, postID, remindAt)
+
+	if err := l.store.AddIssue(issue); err != nil {
+		return nil, err
+	}
+
+	if err := l.store.AddReference(userID, issue.ID, MyListKey, "", ""); err != nil {
+		if rollbackError := l.store.RemoveIssue(issue.ID); rollbackError != nil {
+			l.api.LogError("cannot rollback issue after add error, Err=", err.Error())
+		}
+		return nil, err
+	}
+
+	return issue, nil
+}
+
 func (l *listManager) SendIssue(senderID, receiverID, message, postID string) (string, error) {
 	senderIssue := newIssue(message, postID)
 	if err := l.store.AddIssue(senderIssue); err != nil {
