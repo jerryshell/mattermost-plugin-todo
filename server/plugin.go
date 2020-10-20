@@ -244,13 +244,14 @@ func (p *Plugin) handleList(w http.ResponseWriter, r *http.Request) {
 			nt := time.Unix(now/1000, 0).In(timezone)
 			rt := time.Unix(remindAt/1000, 0).In(timezone)
 
-			// Debug
-			debugStr := "`" + fmt.Sprintf("issue %#v", issue) + "`"
-			debugStr = debugStr + "\n\n" + "`" + fmt.Sprintf("nt %#v rt %#v", nt, rt) + "`"
-			debugStr = debugStr + "\n\n" + "`" + fmt.Sprintf("rt.Sub(nt).Minutes() %#v", rt.Sub(nt).Minutes()) + "`"
+			//// Debug
+			//debugStr := "`" + fmt.Sprintf("issue %#v", issue) + "`"
+			//debugStr = debugStr + "\n\n" + "`" + fmt.Sprintf("nt %#v rt %#v", nt, rt) + "`"
+			//debugStr = debugStr + "\n\n" + "`" + fmt.Sprintf("rt.Sub(nt).Minutes() %#v", rt.Sub(nt).Minutes()) + "`"
 
 			if rt.Sub(nt).Minutes() <= 15 {
-				p.PostBotDM(userID, "Reminder:\n\n"+issueToString(issue)+"\n\n*Debug:*\n"+debugStr)
+				//p.PostBotDM(userID, "Reminder:\n\n"+issueToString(issue)+"\n\n*Debug:*\n"+debugStr)
+				p.PostBotDM(userID, "Reminder:\n\n"+issueToStringByJerry(issue))
 			}
 		}
 	}

@@ -67,3 +67,7 @@ func issueToString(issue *ExtendedIssue) string {
 
 	return str
 }
+
+func issueToStringByJerry(issue *ExtendedIssue) string {
+	return issue.Message
+}
