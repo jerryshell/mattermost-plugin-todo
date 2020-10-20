@@ -229,7 +229,7 @@ func (p *Plugin) handleList(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if r.URL.Query().Get("reminder") == "true" {
+	if r.URL.Query().Get("reminder") == "true" && r.URL.Query().Get("list") == "my" {
 		for _, issue := range issues {
 			remindAt := issue.Issue.RemindAt
 			if remindAt <= 0 {
@@ -250,7 +250,7 @@ func (p *Plugin) handleList(w http.ResponseWriter, r *http.Request) {
 			debugStr = debugStr + "\n\n" + "`" + fmt.Sprintf("rt.Sub(nt).Minutes() %#v", rt.Sub(nt).Minutes()) + "`"
 
 			if rt.Sub(nt).Minutes() <= 15 {
-				p.PostBotDM(userID, "Reminder:\n\n"+issueToString(issue)+"\n\nDebug:\n"+debugStr)
+				p.PostBotDM(userID, "Reminder:\n\n"+issueToString(issue)+"\n\n*Debug:*\n"+debugStr)
 			}
 		}
 	}
